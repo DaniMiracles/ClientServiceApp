@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">ClientServiceApp</string>
+    <string name="get_joke">get joke</string>
+    <string name="service_no_connection">Service no connection</string>
+    <string name="service_unavailable">Service Unavailable</string>
+</resources>
