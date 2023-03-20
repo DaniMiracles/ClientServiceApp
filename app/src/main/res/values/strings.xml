@@ -3,4 +3,7 @@
     <string name="get_joke">get joke</string>
     <string name="service_no_connection">Service no connection</string>
     <string name="service_unavailable">Service Unavailable</string>
+    <string name="show_favourite_joke">show_favourite_joke</string>
+    <string name="no_favorite_joke">No Favorite Joke</string>
+    <string name="empty_cache">Empty Cache</string>
 </resources>

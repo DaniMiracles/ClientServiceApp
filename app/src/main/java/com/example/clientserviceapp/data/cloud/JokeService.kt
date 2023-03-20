@@ -1,4 +1,4 @@
-package com.example.clientserviceapp
+package com.example.clientserviceapp.data.cloud
 
 
 import retrofit2.Call

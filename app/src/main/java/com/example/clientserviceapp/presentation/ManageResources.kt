@@ -1,4 +1,4 @@
-package com.example.clientserviceapp
+package com.example.clientserviceapp.presentation
 
 import android.content.Context
 import androidx.annotation.StringRes
@@ -8,6 +8,7 @@ interface ManageResources {
 
     class Base(private val context: Context) : ManageResources {
         override fun string(resourceId: Int): String = context.getString(resourceId)
+
 
     }
 }
