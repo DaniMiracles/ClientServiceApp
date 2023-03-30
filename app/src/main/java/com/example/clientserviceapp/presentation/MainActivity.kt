@@ -48,8 +48,6 @@ class MainActivity : AppCompatActivity() {
                binding.imageButtonHeart.setImageResource(iconResId)
             }
         })
-
-
     }
 
     override fun onDestroy() {

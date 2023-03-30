@@ -4,10 +4,12 @@ import android.app.Application
 import android.util.Log
 import com.example.clientserviceapp.data.BaseRepository
 import com.example.clientserviceapp.data.cache.CacheDataSource
+import com.example.clientserviceapp.data.cache.ProvideRealm
 import com.example.clientserviceapp.data.cloud.CloudDataSource
 import com.example.clientserviceapp.data.cloud.JokeService
 import com.example.clientserviceapp.presentation.MainViewModel
 import com.example.clientserviceapp.presentation.ManageResources
+import io.realm.Realm
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -19,6 +21,7 @@ class ClientServiceApp : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        Realm.init(this)
 
         val okHttpClient = OkHttpClient.Builder().addInterceptor(HttpLoggingInterceptor { message ->
             Log.d("Retrofit", message)
@@ -38,7 +41,11 @@ class ClientServiceApp : Application() {
         viewModel = MainViewModel(
             BaseRepository(
                 CloudDataSource.Base(retrofit.create(JokeService::class.java), manageResources),
-                CacheDataSource.Fake(manageResources)
+                CacheDataSource.Base(object : ProvideRealm {
+                    override fun provideRealm(): Realm {
+                        return Realm.getDefaultInstance()
+                    }
+                }, manageResources)
             )
 
         )
