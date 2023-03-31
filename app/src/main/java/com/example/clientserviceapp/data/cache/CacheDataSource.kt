@@ -6,33 +6,36 @@ import com.example.clientserviceapp.presentation.JokeUi
 import com.example.clientserviceapp.presentation.ManageResources
 import io.realm.Realm
 
-interface CacheDataSource : DataSource{
+interface CacheDataSource : DataSource {
 
     fun addOrRemove(id: Int, joke: Joke): JokeUi
 
 
     class Base(
         private val realm: ProvideRealm,
-        manageResources: ManageResources
+        manageResources: ManageResources,
+        private val jokeError: JokeError = JokeError.NoFavoriteJoke(manageResources),
+        private val mapper: Joke.Mapper<JokeCache> = ToCache(),
+        private val toFavoriteUi: Joke.Mapper<JokeUi> = ToFavoriteUi(),
+        private val toUi: Joke.Mapper<JokeUi> = ToUi(),
     ) : CacheDataSource {
-
-        private val jokeError = JokeError.NoFavoriteJoke(manageResources)
 
         override fun addOrRemove(id: Int, joke: Joke): JokeUi {
 
             realm.provideRealm().let {
                 val jokeCached = it.where(JokeCache::class.java).equalTo("id", id).findFirst()
                 if (jokeCached == null) {
+
                     it.executeTransaction { realm ->
-                        val jokeCache = joke.map(ToCache())
+                        val jokeCache = joke.map(mapper)
                         realm.insert(jokeCache)
                     }
-                    return joke.map(ToFavoriteUi())
+                    return joke.map(toFavoriteUi)
                 } else {
                     it.executeTransaction { realm ->
                         jokeCached.deleteFromRealm()
                     }
-                    return joke.map(ToUi())
+                    return joke.map(toUi)
                 }
             }
         }
@@ -51,7 +54,7 @@ interface CacheDataSource : DataSource{
 
     }
 
-    class Fake(private val manageResources: ManageResources) : CacheDataSource {
+    class Fake(manageResources: ManageResources) : CacheDataSource {
 
         private val jokeError = JokeError.NoFavoriteJoke(manageResources)
         private val map = mutableMapOf<Int, Joke>()
@@ -82,8 +85,8 @@ interface CacheDataSource : DataSource{
 
 }
 
-interface DataSource{
-    fun fetch(jokeCallback:JokeCallback)
+interface DataSource {
+    fun fetch(jokeCallback: JokeCallback)
 }
 
 interface JokeCallback : ProvideError {
@@ -94,6 +97,6 @@ interface ProvideError {
     fun provideError(error: JokeError)
 }
 
-interface ProvideRealm{
-    fun provideRealm() : Realm
+interface ProvideRealm {
+    fun provideRealm(): Realm
 }

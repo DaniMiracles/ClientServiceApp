@@ -16,13 +16,11 @@ interface CloudDataSource : DataSource {
 
 
     class Base(
-        private val jokeService: JokeService, private val manageResources: ManageResources
+        private val jokeService: JokeService,
+        private val manageResources: ManageResources,
+        private val noConnection : JokeError = JokeError.NoConnection(manageResources),
+        private val serviceError : JokeError = JokeError.ServiceUnavailable(manageResources)
     ) : CloudDataSource {
-
-
-        private val noConnection by lazy { JokeError.NoConnection(manageResources) }
-        private val serviceError by lazy { JokeError.ServiceUnavailable(manageResources) }
-
 
         override fun fetch(jokeCallback: JokeCallback) {
             Log.d("Retrofit", "fetch() started")

@@ -4,11 +4,11 @@ import com.example.clientserviceapp.JokeCache
 import com.example.clientserviceapp.data.cache.CacheDataSource
 import com.example.clientserviceapp.presentation.JokeUi
 
-interface Joke{
-    fun <T> map(mapper: Mapper<T>):T
+interface Joke {
+    fun <T> map(mapper: Mapper<T>): T
 
-    interface Mapper<T>{
-        fun map( type: String, mainText: String, punchline: String, id: Int) : T
+    interface Mapper<T> {
+        fun map(type: String, mainText: String, punchline: String, id: Int): T
     }
 }
 
@@ -48,10 +48,20 @@ class ToFavoriteUi() : Joke.Mapper<JokeUi> {
     }
 }
 
-class Change(private val cacheDataSource: CacheDataSource) : Joke.Mapper<JokeUi> {
+class Change(
+    private val cacheDataSource: CacheDataSource,
+    private val toDomain: Joke.Mapper<JokeDomain> = ToDomain()
+) : Joke.Mapper<JokeUi> {
     override fun map(type: String, mainText: String, punchline: String, id: Int): JokeUi {
-        return cacheDataSource.addOrRemove(id, JokeDomain(type, mainText, punchline, id))
+        return cacheDataSource.addOrRemove(id, toDomain.map(type, mainText, punchline, id))
     }
+}
+
+class ToDomain : Joke.Mapper<JokeDomain> {
+    override fun map(type: String, mainText: String, punchline: String, id: Int): JokeDomain {
+        return JokeDomain(type, mainText, punchline, id)
+    }
+
 }
 
 
