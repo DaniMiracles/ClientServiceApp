@@ -11,7 +11,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewModel: MainViewModel
 
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val binding = ActivityMainBinding.inflate(layoutInflater)
@@ -28,8 +27,8 @@ class MainActivity : AppCompatActivity() {
             viewModel.changeJokeStatus()
         }
 
-        binding.buttonMainAct.setOnClickListener {
-            binding.buttonMainAct.isEnabled = false
+        binding.buttonGetJoke.setOnClickListener {
+            binding.buttonGetJoke.isEnabled = false
             binding.progressBarMainAct.visibility = View.VISIBLE
             viewModel.getJoke()
         }
@@ -39,7 +38,7 @@ class MainActivity : AppCompatActivity() {
 
         viewModel.init(object : JokeUiCallback {
           override fun provideText(text:String) = runOnUiThread(){
-              binding.buttonMainAct.isEnabled = true
+              binding.buttonGetJoke.isEnabled = true
               binding.progressBarMainAct.visibility = View.INVISIBLE
               binding.tvMainAct.text = text
           }
