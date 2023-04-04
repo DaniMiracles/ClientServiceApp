@@ -1,47 +1,56 @@
 package com.example.clientserviceapp.presentation
 
 import androidx.annotation.DrawableRes
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.clientserviceapp.data.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 class MainViewModel(
     private val repository: Repository<JokeUi, JokeError>,
     private val toFavoriteUi: Joke.Mapper<JokeUi> = ToFavoriteUi(),
     private val toUi: Joke.Mapper<JokeUi> = ToUi(),
-) {
+) : ViewModel() {
 
     private var jokeUiCallback: JokeUiCallback = JokeUiCallback.Empty()
 
 
-    fun getJoke() {
-        Thread{
+ fun getJoke() {
+        viewModelScope.launch(Dispatchers.IO) {
             val result = repository.fetch()
-            if (result.isSuccessful())
-                result.map(if(result.toFavorite()) toFavoriteUi else toUi).show(jokeUiCallback)
+            val ui = if (result.isSuccessful())
+                result.map(if (result.toFavorite()) toFavoriteUi else toUi)
             else
-                JokeUi.Failed(result.errorMessage()).show(jokeUiCallback)
-        }.start()
+                JokeUi.Failed(result.errorMessage())
 
+            withContext(Dispatchers.Main) {
+                ui.show(jokeUiCallback)
+            }
+        }
+    }
+
+    override fun onCleared() {
+        jokeUiCallback = JokeUiCallback.Empty()
     }
 
     fun init(jokeUiCallback: JokeUiCallback) {
         this.jokeUiCallback = jokeUiCallback
-
-    }
-
-    fun clear() {
-        jokeUiCallback = JokeUiCallback.Empty()
     }
 
     fun chooseFavorite(favorites: Boolean) {
         repository.chooseFavorites(favorites)
     }
 
-    fun changeJokeStatus() {
-        Thread {
+     fun changeJokeStatus() {
+        viewModelScope.launch(Dispatchers.IO) {
             val jokeUi = repository.changeJokeStatus()
-            jokeUi.show(jokeUiCallback)
-        }.start()
+            withContext(Dispatchers.Main) {
+                jokeUi.show(jokeUiCallback)
+            }
+        }
     }
 }
 

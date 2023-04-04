@@ -19,7 +19,7 @@ interface CloudDataSource : DataSource {
         private val serviceError: JokeError = JokeError.ServiceUnavailable(manageResources)
     ) : CloudDataSource {
 
-        override fun fetch(): JokeResult =
+        override suspend fun fetch(): JokeResult =
             try {
                 val response = jokeService.joke().execute()
                 JokeResult.Success(response.body()!!, false)

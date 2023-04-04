@@ -16,7 +16,7 @@ class BaseRepository(
 
 
 
-    override fun fetch(): JokeResult {
+    override suspend fun fetch(): JokeResult {
         val jokeResult = if (getJokeFromCache)
             cacheDataSource.fetch()
          else
@@ -32,7 +32,7 @@ class BaseRepository(
 
 
 
-    override fun changeJokeStatus(): JokeUi {
+    override suspend fun changeJokeStatus(): JokeUi {
       return  jokeTemporary!!.map(change)
     }
 

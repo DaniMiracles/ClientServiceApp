@@ -49,8 +49,4 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    override fun onDestroy() {
-        viewModel.clear()
-        super.onDestroy()
-    }
 }

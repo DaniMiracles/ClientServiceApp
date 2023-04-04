@@ -13,6 +13,6 @@ open class JokeCache : RealmObject(), Joke {
     var type: String = ""
 
 
-    override fun <T> map(mapper: Joke.Mapper<T>): T = mapper.map(type, mainText, punchline, id)
+    override suspend fun <T> map(mapper: Joke.Mapper<T>): T = mapper.map(type, mainText, punchline, id)
 
 }

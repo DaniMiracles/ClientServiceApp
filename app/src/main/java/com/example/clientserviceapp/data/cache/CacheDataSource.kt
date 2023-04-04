@@ -8,7 +8,7 @@ import io.realm.Realm
 
 interface CacheDataSource : DataSource {
 
-    fun addOrRemove(id: Int, joke: Joke): JokeUi
+    suspend fun addOrRemove(id: Int, joke: Joke): JokeUi
 
 
     class Base(
@@ -20,32 +20,33 @@ interface CacheDataSource : DataSource {
         private val toUi: Joke.Mapper<JokeUi> = ToUi(),
     ) : CacheDataSource {
 
-        override fun addOrRemove(id: Int, joke: Joke): JokeUi {
-            val realm = realm.provideRealm()
-            val jokeCached = realm.where(JokeCache::class.java).equalTo("id", id).findFirst()
-            return if (jokeCached == null) {
-                realm.executeTransaction { realm ->
+        override suspend fun addOrRemove(id: Int, joke: Joke): JokeUi {
+            realm.provideRealm().use { realm ->
+                val jokeCached = realm.where(JokeCache::class.java).equalTo("id", id).findFirst()
+                return if (jokeCached == null) {
                     val jokeCache = joke.map(mapper)
-                    realm.insert(jokeCache)
+                    realm.executeTransaction { realm ->
+                        realm.insert(jokeCache)
+                    }
+                    joke.map(toFavoriteUi)
+                } else {
+                    realm.executeTransaction { realm ->
+                        jokeCached.deleteFromRealm()
+                    }
+                    joke.map(toUi)
                 }
-                joke.map(toFavoriteUi)
-            } else {
-                realm.executeTransaction { realm ->
-                    jokeCached.deleteFromRealm()
-                }
-                joke.map(toUi)
             }
-
         }
 
-        override fun fetch(): JokeResult {
-            val realm = realm.provideRealm()
-            val jokes = realm.where(JokeCache::class.java).findAll()
-            return if (jokes.isEmpty()) {
-                JokeResult.Failure(jokeError)
-            } else {
-                val jokeCached = jokes.random()
-                JokeResult.Success(realm.copyFromRealm(jokeCached), true)
+        override suspend fun fetch(): JokeResult {
+            realm.provideRealm().use { realm ->
+                val jokes = realm.where(JokeCache::class.java).findAll()
+                return if (jokes.isEmpty()) {
+                    JokeResult.Failure(jokeError)
+                } else {
+                    val jokeCached = jokes.random()
+                    JokeResult.Success(realm.copyFromRealm(jokeCached), true)
+                }
             }
         }
 
@@ -56,7 +57,7 @@ interface CacheDataSource : DataSource {
         private val jokeError = JokeError.NoFavoriteJoke(manageResources)
         private val map = mutableMapOf<Int, Joke>()
 
-        override fun addOrRemove(id: Int, joke: Joke): JokeUi {
+        override suspend fun addOrRemove(id: Int, joke: Joke): JokeUi {
             return if (map.containsKey(id)) {
                 map.remove(id)
                 joke.map(ToUi())
@@ -68,7 +69,7 @@ interface CacheDataSource : DataSource {
 
 
         private var count = 0
-        override fun fetch(): JokeResult {
+        override suspend fun fetch(): JokeResult {
             return if (map.isEmpty()) {
                 JokeResult.Failure(jokeError)
             } else {
@@ -83,7 +84,7 @@ interface CacheDataSource : DataSource {
 }
 
 interface DataSource {
-    fun fetch(): JokeResult
+    suspend fun fetch(): JokeResult
 }
 
 interface JokeResult : Joke {
@@ -96,7 +97,7 @@ interface JokeResult : Joke {
         override fun errorMessage() = ""
         override fun toFavorite(): Boolean = toFavorite
 
-        override fun <T> map(mapper: Joke.Mapper<T>) = joke.map(mapper)
+        override suspend fun <T> map(mapper: Joke.Mapper<T>) = joke.map(mapper)
     }
 
     class Failure(private val error: JokeError) : JokeResult {
@@ -104,7 +105,7 @@ interface JokeResult : Joke {
         override fun errorMessage() = error.message()
         override fun toFavorite(): Boolean = false
 
-        override fun <T> map(mapper: Joke.Mapper<T>) = throw java.lang.IllegalStateException()
+        override suspend fun <T> map(mapper: Joke.Mapper<T>) = throw java.lang.IllegalStateException()
     }
 }
 
