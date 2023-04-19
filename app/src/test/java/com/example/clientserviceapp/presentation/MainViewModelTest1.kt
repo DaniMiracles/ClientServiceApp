@@ -27,14 +27,7 @@ class MainViewModelTest() {
         dispatcherList = FakeDispatcherList()
 
 
-        viewModel = MainViewModel(
-            repository,
-            toFavoriteMapper,
-            toBaseMapper,
-            dispatcherList.io(),
-            dispatcherList.ui()
-        )
-
+        viewModel = MainViewModel(repository, toFavoriteMapper, toBaseMapper, FakeDispatcherList())
         viewModel.init(fakeJokeUiCallback)
     }
 
@@ -105,8 +98,8 @@ class MainViewModelTest() {
     }
 
     @Test
-    fun test_change_joke_status(){
-        repository.returnChangeJokeStatus = FakeJokeUi("changeText","changePunchline",5,false)
+    fun test_change_joke_status() {
+        repository.returnChangeJokeStatus = FakeJokeUi("changeText", "changePunchline", 5, false)
         viewModel.changeJokeStatus()
 
         val expectedText = "changeText_changePunchline"
@@ -154,7 +147,7 @@ private data class FakeJokeUi(
     private val punchline: String,
     private val id: Int,
     private val toFavorite: Boolean
-) : JokeUi{
+) : JokeUi {
     override fun show(jokeUiCallback: JokeUiCallback) {
         jokeUiCallback.provideText(text + "_" + punchline)
         jokeUiCallback.provideIconResId(if (toFavorite) id + 1 else id)
@@ -197,7 +190,7 @@ private class FakeRepository : Repository<JokeUi, JokeError> {
         return returnFakeJokeResult!!
     }
 
-    var returnChangeJokeStatus : JokeUi? = null
+    var returnChangeJokeStatus: JokeUi? = null
     override suspend fun changeJokeStatus(): JokeUi {
         return returnChangeJokeStatus!!
     }

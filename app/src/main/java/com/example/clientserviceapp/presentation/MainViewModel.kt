@@ -4,34 +4,27 @@ import androidx.annotation.DrawableRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.clientserviceapp.data.*
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 
 
 class MainViewModel(
     private val repository: Repository<JokeUi, JokeError>,
     private val toFavoriteUi: Joke.Mapper<JokeUi> = ToFavoriteUi(),
     private val toUi: Joke.Mapper<JokeUi> = ToUi(),
-    private val dispatcherIO : CoroutineDispatcher = DispatcherList.Base().io(),
-    private val dispatcherUI : CoroutineDispatcher = DispatcherList.Base().ui()
-) : ViewModel() {
+    private val dispatcherList: DispatcherList = DispatcherList.Base(),
+) : BaseViewModel(dispatcherList = dispatcherList) {
 
     private var jokeUiCallback: JokeUiCallback = JokeUiCallback.Empty()
 
 
- fun getJoke() {
-        viewModelScope.launch(dispatcherIO) {
-            val result = repository.fetch()
-            val ui = if (result.isSuccessful())
-                result.map(if (result.toFavorite()) toFavoriteUi else toUi)
-            else
-                JokeUi.Failed(result.errorMessage())
-            withContext(dispatcherUI) {
-                ui.show(jokeUiCallback)
-            }
-        }
+    fun getJoke() = handleAny({
+        val result = repository.fetch()
+        if (result.isSuccessful())
+            result.map(if (result.toFavorite()) toFavoriteUi else toUi)
+        else
+            JokeUi.Failed(result.errorMessage())
+    }) {
+        it.show(jokeUiCallback)
     }
 
     override fun onCleared() {
@@ -46,14 +39,12 @@ class MainViewModel(
         repository.chooseFavorites(favorites)
     }
 
-     fun changeJokeStatus() {
-        viewModelScope.launch(dispatcherIO) {
-            val jokeUi = repository.changeJokeStatus()
-            withContext(dispatcherUI) {
-                jokeUi.show(jokeUiCallback)
-            }
+    fun changeJokeStatus() : Unit {
+        handleAny({repository.changeJokeStatus()}){
+            it.show(jokeUiCallback)
         }
     }
+
 }
 
 interface JokeUiCallback {
@@ -69,13 +60,30 @@ interface JokeUiCallback {
     }
 }
 
-interface DispatcherList{
+interface DispatcherList {
 
-    fun io() : CoroutineDispatcher
-    fun ui() : CoroutineDispatcher
+    fun io(): CoroutineDispatcher
+    fun ui(): CoroutineDispatcher
 
-    class Base : DispatcherList{
+    class Base : DispatcherList {
         override fun io(): CoroutineDispatcher = Dispatchers.IO
         override fun ui(): CoroutineDispatcher = Dispatchers.Main
     }
 }
+
+
+
+abstract class BaseViewModel(private val dispatcherList: DispatcherList) : ViewModel() {
+
+    fun <T> handleAny(
+        blockIo: suspend () -> T,
+        blockUi: suspend (T) -> Unit
+    ) = viewModelScope.launch(dispatcherList.io()) {
+        val result = blockIo.invoke()
+        withContext(dispatcherList.ui()) {
+            blockUi.invoke(result)
+        }
+    }
+}
+
+
